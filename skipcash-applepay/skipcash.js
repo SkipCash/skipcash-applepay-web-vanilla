@@ -72,7 +72,6 @@
 		 * supportedNetworks: string - payment processing networks visa, masterCard, discover, amex...etc
 		 * merchant : string - optional, merchant name
 		 * paymentData: object - contains the data of the user to be used to created a new payment
-		 * createPaymentEndpoint: string - merchant endpoint to create skipcash payments, 
 		 * appleUrlValidationEndpoint: string - merchant endpoint to validate the merchant session for apple, 
 		 * processApplePaymentEndpoint: string - merchant endpoint to process the payment by skipcash,
 		 * headers: object - headers for the merchant's endpoint if required
@@ -100,15 +99,9 @@
 
 			session.begin();
 
-			session.onvalidatemerchant = function (event) {
+		session.onvalidatemerchant = function (event) {
 
 				options.logs ? console.log("validationURL ---> ", event.validationURL) : null;
-
-				if (!options.createPaymentEndpoint) {
-					session.abort();
-					onError("No endpoint url was provided for 'createPaymentEndpoint'.");
-					return;
-				}
 
 				if (!options.appleUrlValidationEndpoint) {
 					session.abort();
@@ -118,31 +111,19 @@
 
 				try{
 					skipcash.network.onRequest(
-						options.createPaymentEndpoint,
+						options.appleUrlValidationEndpoint,
 						options.headers,
-						{paymentData: options.paymentData},
-						function(data) {
-							options.logs ? console.log("new payment was created ---> ", data) : null;
-							options.id = data.resultObj.id;
-							skipcash.network.onRequest(
-								options.appleUrlValidationEndpoint,
-								options.headers,
-								{url: event.validationURL},
-								function(merchantSession){
-									session.completeMerchantValidation(merchantSession);
-								},
-								function(error){
-									session.completePayment(ApplePaySession.STATUS_FAILURE);
-									onError(error);
-								}
-							);
+						{url: event.validationURL},
+						function(merchantSession){
+							session.completeMerchantValidation(merchantSession);
 						},
-						function(error) {
-							session.abort();
+						function(error){
+							session.completePayment(ApplePaySession.STATUS_FAILURE);
 							onError(error);
 						}
 					);
 				} catch (error) {
+					options.logs ? console.error("onvalidatemerchant error -> ", error) : null;
 					session.abort();
 					onError(error);
 				}
@@ -155,7 +136,7 @@
 				skipcash.network.onRequest(
 					options.processApplePaymentEndpoint,
 					options.headers,
-					{token,paymentId: options.id},
+					{token, ...options.paymentData},
 					function(data){
 						if (data &&  data.resultObj && data.resultObj.isSuccess) {
 							session.completePayment(ApplePaySession.STATUS_SUCCESS);
@@ -166,6 +147,7 @@
 						}
 					},
 					function(error){
+						options.logs ? console.error("onpaymentauthorized  error -> ", error) : null;
 						onError(error);
 					}
 				);

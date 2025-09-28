@@ -10,6 +10,9 @@ Please refer to https://dev.skipcash.app/doc/api-integration/ for more informati
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VanillaJS</title>
+    <script crossorigin 
+      src="https://applepay.cdn-apple.com/jsapi/1.latest/apple-pay-sdk.js" crossorigin="anonymous"> 
+    </script>
 </head>
 
 <body style="height: 90vh;">
@@ -24,39 +27,43 @@ Please refer to https://dev.skipcash.app/doc/api-integration/ for more informati
         <h7>This is project contains vanilla-js code no frameworks used (pure html + js)</h7>
         <!-- Apple Pay Button (is hidden by default as display is none) -->
         <div id="apple-pay-button" style="display: none; margin-top: 1rem;">
-            <button
+            <apple-pay-button
+                buttonstyle="black"
                 onclick="initiatePayment()"
+                type="plain"
                 style="
-                    -webkit-appearance: -apple-pay-button; -apple-pay-button-style: black;
-                    width: 300px; height: 35px; cursor: pointer; display: inline-block;
+                    width: 350px;
+                    height: 35px;
+                    --apple-pay-button-border-radius: 5px;
+                    --apple-pay-button-padding: 3px 10px;
+                    --apple-pay-button-box-sizing: content-box;
+                    display: inline-block;
+                    cursor: pointer;
                 "
-            ></button>
+            />
         </div>
     </div>
     <script src="./skipcash-applepay/skipcash.js"></script>
     <script type="text/javascript">
-        function onApplePayCheckSuccess(){console.log("device can pay using apple pay.")};
+        function onApplePayCheckSuccess(){console.log("device can pay using apple pay.");document.getElementById("apple-pay-button").style.display = "block";};
         function onApplePayCheckFailure(errorMsg){console.log(errorMsg)};
 
         function canPayWithApplePay (){
             // first parameters is the merchant id (mid), here for test we're using skipcash sandbox mid (merchant.skipcash.testpackages). 
             skipcash.sdk.canPayWithApple(
-                "merchant.skipcash.testpackages", // your merchant id.
-                onApplePayCheckSuccess, 
+                "merchant.app.skipcash.appay", // your merchant id.
+                onApplePayCheckSuccess,
                 onApplePayCheckFailure
             );
         }
-
-        canPayWithApplePay();
 
         function initiatePayment(){
             console.log("payment is initiated...");        
 
             const options = {
                 logs: false, // if 'true' you will get logs for each step in the apple pay process for easy debugging.
-                createPaymentEndpoint: "", // used to create new skipcash payment
-                appleUrlValidationEndpoint: "", // used to validate the merchant 
-                processApplePaymentEndpoint: "", // used to process the payment by calling skipcash API
+                appleUrlValidationEndpoint: "https://paymentsimulation-4f296ff7747c.herokuapp.com/api/appleUrlValidation/", // used to validate the merchant 
+                processApplePaymentEndpoint: "https://paymentsimulation-4f296ff7747c.herokuapp.com/api/applePayWEBSDK/", // used to process the payment by calling skipcash API
                 countryCode: "QA", // default
                 currencyCode: "QAR", // default - don't change
                 supportedNetworks: ["visa", "masterCard", "amex"], // through apple pay skipcash currently supports visa, master, amex 
@@ -69,14 +76,14 @@ Please refer to https://dev.skipcash.app/doc/api-integration/ for more informati
                     firstName: "skipcash",
                     lastName: "test",
                     email: "test@apple.com",
-                    phoneNumber: "+97412341234",
+                    phone: "+97412341234",
                     amount: "1.00",
                     transactionId: "sandbox1" // (optional) - should be unqiue, your internal system order id.
                 },
                 headers: { // you can pass your headers if required by your endpoints
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'Authorization': '' // -> pass authroization header for your endpoint(s) protection.
+                    'Authorization': 'Token a15ac4f95e21509b4ef6d481d9b4ed6d848fad7b' // -> pass authroization header for your endpoint(s) protection.
                 }
             };
 
@@ -87,11 +94,7 @@ Please refer to https://dev.skipcash.app/doc/api-integration/ for more informati
             skipcash.sdk.payWithApplePay(options, onApplePaySuccess, onApplePayFailure, onApplePayCancelled);
         }
         document.addEventListener("DOMContentLoaded", function () {
-            // enable the button if the device supports apple pay
-            if (window.ApplePaySession && ApplePaySession.canMakePayments()) {
-                // show the apple pay button
-                document.getElementById("apple-pay-button").style.display = "block";
-            }
+            canPayWithApplePay();
         });
     </script>
 </body>

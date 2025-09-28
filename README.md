@@ -83,7 +83,15 @@ Please refer to https://dev.skipcash.app/doc/api-integration/ for more informati
         <script src="./skipcash-applepay/skipcash.js"></script>
         <script type="text/javascript">
             function onApplePayCheckSuccess(){console.log("device can pay using apple pay.");document.getElementById("apple-pay-button").style.display = "block";};
-            function onApplePayCheckFailure(errorMsg){console.log(errorMsg)};
+            function onApplePayCheckFailure(errorMsg){
+                const isApplePayJSAvailable = typeof window.ApplePaySession !== "undefined";
+                if(isApplePayJSAvailable){
+                    document.getElementById("apple-pay-button").style.display = "block";
+                    return;
+                }
+                console.log(errorMsg);
+            };
+
 
             function canPayWithApplePay (){
                 // first parameters is the merchant id (mid), here for test we're using skipcash sandbox mid (merchant.skipcash.testpackages). 
